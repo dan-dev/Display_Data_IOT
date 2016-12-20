@@ -27,6 +27,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,10 +36,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //final TextView temp = (TextView) findViewById(R.id.textTemp);
-
-        final LineChart lchart = (LineChart) findViewById(R.id.temp_linechart);
-        final LineChart lchart2 = (LineChart) findViewById(R.id.ecg_linechart);
+        final LineChart lchartTemp = (LineChart) findViewById(R.id.temp_linechart);
+        final LineChart lchartECG = (LineChart) findViewById(R.id.ecg_linechart);
         final ImageView imageView = (ImageView) findViewById(R.id.position_image);
         final TextView positionText = (TextView) findViewById(R.id.position_text);
         final HorizontalBarChart barChart = (HorizontalBarChart) findViewById(R.id.respiration_linechart);
@@ -47,19 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         positionText.setText("\t\t\tPosition:\n" + "\t\t\t\tSitting");
 
-        Legend legend = lchart.getLegend();
-        legend.setEnabled(false);
-
-        Legend legend2 = lchart2.getLegend();
-        legend2.setEnabled(false);
-
-        lchart.setBackgroundColor(Color.BLACK);
-        LineData ldata = new LineData();
-
-        ldata.setValueTextColor(Color.GREEN);
-
-        lchart.setData(ldata);
-
+        /*
         List<Entry> valuesEntry = new ArrayList<Entry>();
 
         Entry a1 = new Entry(0, 100);
@@ -75,35 +62,90 @@ public class MainActivity extends AppCompatActivity {
         valuesEntry.add(a4);
         valuesEntry.add(a5);
         valuesEntry.add(a6);
+        */
 
-        LineDataSet linDtset = new LineDataSet(valuesEntry, "resp");
+        //region #Region - Temperature
 
-        ldata.addDataSet(linDtset);
-        lchart.setData(ldata);
-        lchart.invalidate();
+        Legend legendTemp = lchartTemp.getLegend();
+        legendTemp.setEnabled(false);
 
-        lchart2.setBackgroundColor(Color.BLACK);
-        lchart2.setData(ldata);
-        lchart2.invalidate();
+        lchartTemp.setBackgroundColor(Color.BLACK);
+        LineData ldataTemp = new LineData();
+
+        ldataTemp.setValueTextColor(Color.GREEN);
+        lchartTemp.setData(ldataTemp);
+
+        LineDataSet linDtsetTemp = null;
+        try {
+            linDtsetTemp = new LineDataSet(new DataReader().execute("temp.txt").get(), "Temperature");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        ldataTemp.addDataSet(linDtsetTemp);
+        lchartTemp.setData(ldataTemp);
+        lchartTemp.invalidate();
+
+        //endregion Temperature
 
 
-        List<BarEntry> barEntries = new ArrayList<>();
-        barEntries.add(new BarEntry(0f, 20f));
-        barEntries.add(new BarEntry(1f, 40f));
-        barEntries.add(new BarEntry(2f, 60f));
-        barEntries.add(new BarEntry(3f, 100f));
-        barEntries.add(new BarEntry(4f, 60f));
-        barEntries.add(new BarEntry(5f, 40f));
-        barEntries.add(new BarEntry(6f, 20f));
+        //region #Region - ECG
+
+        Legend legendECG = lchartECG.getLegend();
+        legendECG.setEnabled(false);
+        lchartECG.setBackgroundColor(Color.BLACK);
+
+        LineData ldataECG = new LineData();
+        ldataECG.setValueTextColor(Color.GREEN);
+
+        LineDataSet linDtsetECG = null;
+        try {
+            linDtsetECG = new LineDataSet(new DataReader().execute("ECG.txt").get(), "ECG");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        ldataECG.addDataSet(linDtsetECG);
+        lchartECG.setData(ldataECG);
+        lchartECG.invalidate();
+
+        //endregion
+
+
+        //region #Region - Respiration
 
         Legend barLegend = barChart.getLegend();
         barLegend.setEnabled(false);
 
-        BarDataSet barSet = new BarDataSet(barEntries, "resp");
+        BarDataSet barSet = null;
+        try {
+            barSet = new BarDataSet(new DataBarEntryReader().execute("Airflow.txt").get(), "Respiration");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
 
         BarData barData = new BarData(barSet);
-
         barChart.setData(barData);
+
+        //endregion
+
+        /*
+        List<BarEntry> barEntries = new ArrayList<>();
+        barEntries.add(new BarEntry(0, 20));
+        barEntries.add(new BarEntry(1, 40));
+        barEntries.add(new BarEntry(2, 60));
+        barEntries.add(new BarEntry(3, 100));
+        barEntries.add(new BarEntry(4, 60));
+        barEntries.add(new BarEntry(5, 40));
+        barEntries.add(new BarEntry(6, 20));
+        */
+
 
         File memory = Environment.getExternalStorageDirectory();
 
@@ -124,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
         catch (IOException exception){
 
         }
-
         //temp.setText(data.toString());
 
     }
