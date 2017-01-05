@@ -7,6 +7,7 @@ import android.graphics.Path;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -21,6 +22,10 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -30,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
+
+    private JSONArray jsonArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +49,28 @@ public class MainActivity extends AppCompatActivity {
         final TextView positionText = (TextView) findViewById(R.id.position_text);
         final HorizontalBarChart barChart = (HorizontalBarChart) findViewById(R.id.respiration_linechart);
 
+        List<Entry> entriesTemp = new ArrayList<>();
+        List<Entry> entriesECG = new ArrayList<>();
+
+        try {
+            jsonArray = new JSONArray(new WebDataParser().execute("ss").get());
+            for (int i = 0; i < jsonArray.length(); i++){
+                entriesTemp.add(new Entry(i, Float.parseFloat(jsonArray.getJSONObject(i).getString("temp"))));
+                entriesECG.add(new Entry(i, Float.parseFloat(jsonArray.getJSONObject(i).getString("ecg"))));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         imageView.setImageResource(R.drawable.sitting);
 
         positionText.setText("\t\t\tPosition:\n" + "\t\t\t\tSitting");
 
-        /*
-        List<Entry> valuesEntry = new ArrayList<Entry>();
+        /*List<Entry> valuesEntry = new ArrayList<Entry>();
 
         Entry a1 = new Entry(0, 100);
         Entry a2 = new Entry(1, 150);
@@ -61,8 +84,7 @@ public class MainActivity extends AppCompatActivity {
         valuesEntry.add(a3);
         valuesEntry.add(a4);
         valuesEntry.add(a5);
-        valuesEntry.add(a6);
-        */
+        valuesEntry.add(a6);*/
 
         //region #Region - Temperature
 
@@ -75,14 +97,16 @@ public class MainActivity extends AppCompatActivity {
         ldataTemp.setValueTextColor(Color.GREEN);
         lchartTemp.setData(ldataTemp);
 
-        LineDataSet linDtsetTemp = null;
-        try {
+        LineDataSet linDtsetTemp = new LineDataSet(entriesTemp, "Temperature");
+
+
+        /*try {
             linDtsetTemp = new LineDataSet(new DataReader().execute("temp.txt").get(), "Temperature");
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
-        }
+        }*/
 
         ldataTemp.addDataSet(linDtsetTemp);
         lchartTemp.setData(ldataTemp);
@@ -100,14 +124,14 @@ public class MainActivity extends AppCompatActivity {
         LineData ldataECG = new LineData();
         ldataECG.setValueTextColor(Color.GREEN);
 
-        LineDataSet linDtsetECG = null;
-        try {
+        LineDataSet linDtsetECG = new LineDataSet(entriesECG, "ECG");
+        /*try {
             linDtsetECG = new LineDataSet(new DataReader().execute("ECG.txt").get(), "ECG");
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
-        }
+        }*/
 
         ldataECG.addDataSet(linDtsetECG);
         lchartECG.setData(ldataECG);
